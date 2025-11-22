@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare, Bookmark, ThumbsUp, ThumbsDown, Meh, Sparkles } from "lucide-react";
+import { MessageSquare, Bookmark, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,12 +20,12 @@ interface ExplanationPanelProps {
   onSavePattern?: () => void;
 }
 
-type Rating = -1 | 0 | 1;
+type Rating = boolean;
 
 interface SaveRatingParams {
   explanationId: string;
   userId: string;
-  rating: Rating;
+  is_helpful: boolean;
 }
 
 export const ExplanationPanel = ({
@@ -34,24 +34,18 @@ export const ExplanationPanel = ({
   isLoading,
   onSavePattern,
 }: ExplanationPanelProps) => {
-  const [selectedRating, setSelectedRating] = useState<Rating | null>(null);
+  const [selectedRating, setSelectedRating] = useState<boolean | null>(null);
 
   // Mutation to save rating to database
   const saveRatingMutation = useMutation({
-    mutationFn: async ({ explanationId, userId, rating }: SaveRatingParams) => {
+    mutationFn: async ({ explanationId, userId, is_helpful }: SaveRatingParams) => {
       const { data, error } = await supabase
-        .from("explanation_ratings")
-        .upsert(
-          {
-            explanation_id: explanationId,
-            user_id: userId,
-            rating,
-            created_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "explanation_id,user_id",
-          }
-        )
+        .from("explanation_feedback")
+        .insert({
+          explanation_id: explanationId,
+          user_id: userId,
+          is_helpful,
+        })
         .select()
         .single();
 
@@ -104,7 +98,7 @@ export const ExplanationPanel = ({
     saveRatingMutation.mutate({
       explanationId,
       userId: user.id,
-      rating,
+      is_helpful: rating,
     });
   };
 
@@ -209,11 +203,11 @@ export const ExplanationPanel = ({
             variant="ghost"
             size="sm"
             className={`h-7 px-2 ${
-              selectedRating === 1
+              selectedRating === true
                 ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
                 : ""
             }`}
-            onClick={() => handleRating(1)}
+            onClick={() => handleRating(true)}
             disabled={saveRatingMutation.isPending}
             title="Helpful"
           >
@@ -223,25 +217,11 @@ export const ExplanationPanel = ({
             variant="ghost"
             size="sm"
             className={`h-7 px-2 ${
-              selectedRating === 0
-                ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
-                : ""
-            }`}
-            onClick={() => handleRating(0)}
-            disabled={saveRatingMutation.isPending}
-            title="Neutral"
-          >
-            <Meh className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`h-7 px-2 ${
-              selectedRating === -1
+              selectedRating === false
                 ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                 : ""
             }`}
-            onClick={() => handleRating(-1)}
+            onClick={() => handleRating(false)}
             disabled={saveRatingMutation.isPending}
             title="Not helpful"
           >

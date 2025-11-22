@@ -62,9 +62,9 @@ serve(async (req) => {
     console.log("Explaining code:", { language, selected_length: selected_code.length });
 
     // Get Claude API key
-    const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    const anthropicApiKey = Deno.env.get("Metis_Clew");
     if (!anthropicApiKey) {
-      throw new Error("ANTHROPIC_API_KEY not configured");
+      throw new Error("Metis_Clew not configured");
     }
 
     // Construct prompt for Claude
