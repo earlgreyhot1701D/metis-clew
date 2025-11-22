@@ -167,13 +167,25 @@ const Index = () => {
     explainCodeMutation.mutate(selectedCode);
   };
 
+  const handleSnippetClick = (snippet: { id?: string; code: string; language: string; title: string }) => {
+    setCurrentSnippet({
+      id: snippet.id,
+      code: snippet.code,
+      language: snippet.language,
+    });
+    toast({
+      title: "Snippet loaded",
+      description: `"${snippet.title}" is ready for analysis`,
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background">
       <WelcomeModal />
       <Header />
 
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar />
+        <Sidebar onSnippetClick={handleSnippetClick} />
         
         <div className="flex-1 flex flex-col">
           <main className="flex-1 container mx-auto p-4 overflow-auto">

@@ -7,7 +7,11 @@ import { Badge } from "./ui/badge";
 import { useLocalSession } from "@/hooks/useLocalSession";
 import { SkillBadge } from "./SkillBadge";
 
-export const Sidebar = () => {
+interface SidebarProps {
+  onSnippetClick?: (snippet: { id?: string; code: string; language: string; title: string }) => void;
+}
+
+export const Sidebar = ({ onSnippetClick }: SidebarProps) => {
   const { sessionData, getProgress, getNextLevelInfo } = useLocalSession();
   
   const { data: recentSnippets } = useQuery({
@@ -67,6 +71,7 @@ export const Sidebar = () => {
               recentSnippets.map((snippet) => (
                 <div
                   key={snippet.id}
+                  onClick={() => onSnippetClick?.(snippet)}
                   className="text-xs p-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border border-border/50"
                 >
                   <div className="font-mono text-foreground truncate">{snippet.title}</div>
@@ -77,6 +82,7 @@ export const Sidebar = () => {
               sessionData.recentSnippets.map((snippet) => (
                 <div
                   key={snippet.id}
+                  onClick={() => onSnippetClick?.(snippet)}
                   className="text-xs p-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border border-border/50"
                 >
                   <div className="font-mono text-foreground truncate">{snippet.title}</div>
