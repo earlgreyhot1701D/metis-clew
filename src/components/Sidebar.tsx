@@ -4,8 +4,11 @@ import { Clock, Sparkles, BookOpen, Settings, BarChart3 } from "lucide-react";
 import { NavLink } from "./NavLink";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "./ui/badge";
+import { useLocalSession } from "@/hooks/useLocalSession";
 
 export const Sidebar = () => {
+  const { sessionData } = useLocalSession();
+  
   const { data: recentSnippets } = useQuery({
     queryKey: ['recent-snippets'],
     queryFn: async () => {
@@ -27,7 +30,10 @@ export const Sidebar = () => {
     queryKey: ['user-preferences'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user) return {
+        dominant_pattern: sessionData.dominantPattern,
+        total_explanations: sessionData.totalExplanations,
+      };
       
       const { data, error } = await supabase
         .from('user_preferences')
@@ -58,6 +64,16 @@ export const Sidebar = () => {
           <div className="space-y-2">
             {recentSnippets && recentSnippets.length > 0 ? (
               recentSnippets.map((snippet) => (
+                <div
+                  key={snippet.id}
+                  className="text-xs p-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border border-border/50"
+                >
+                  <div className="font-mono text-foreground truncate">{snippet.title}</div>
+                  <div className="text-muted-foreground mt-1">{snippet.language}</div>
+                </div>
+              ))
+            ) : sessionData.recentSnippets.length > 0 ? (
+              sessionData.recentSnippets.map((snippet) => (
                 <div
                   key={snippet.id}
                   className="text-xs p-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border border-border/50"

@@ -10,6 +10,7 @@ import { WelcomeModal } from "@/components/WelcomeModal";
 import { Sidebar } from "@/components/Sidebar";
 import { StatusBar } from "@/components/StatusBar";
 import { useToast } from "@/hooks/use-toast";
+import { useLocalSession } from "@/hooks/useLocalSession";
 
 const Index = () => {
   const [currentSnippet, setCurrentSnippet] = useState<{
@@ -20,6 +21,7 @@ const Index = () => {
   const [currentExplanation, setCurrentExplanation] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { trackCodeSubmit, trackExplanation } = useLocalSession();
 
   // Fetch learning patterns
   const { data: patterns = [] } = useQuery({
@@ -85,6 +87,7 @@ const Index = () => {
         code: data.code,
         language: data.language,
       });
+      trackCodeSubmit(data.code, data.language);
       toast({
         title: "Success",
         description: "Code loaded successfully",
@@ -118,6 +121,7 @@ const Index = () => {
     },
     onSuccess: (data) => {
       setCurrentExplanation(data.explanation);
+      trackExplanation();
       queryClient.invalidateQueries({ queryKey: ["learning-patterns"] });
       toast({
         title: "Explanation generated",
