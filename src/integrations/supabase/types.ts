@@ -14,7 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      code_snippets: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          language: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          language?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          language?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_snippets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      explanations: {
+        Row: {
+          created_at: string
+          explanation: Json
+          id: string
+          position: Json | null
+          selected_code: string
+          snippet_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          explanation: Json
+          id?: string
+          position?: Json | null
+          selected_code: string
+          snippet_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          explanation?: Json
+          id?: string
+          position?: Json | null
+          selected_code?: string
+          snippet_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "explanations_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "code_snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "explanations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_patterns: {
+        Row: {
+          created_at: string
+          frequency: number
+          id: string
+          insights: Json | null
+          last_seen: string
+          pattern_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          frequency?: number
+          id?: string
+          insights?: Json | null
+          last_seen?: string
+          pattern_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          frequency?: number
+          id?: string
+          insights?: Json | null
+          last_seen?: string
+          pattern_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
