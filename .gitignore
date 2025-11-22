@@ -1,3 +1,11 @@
+# Environment variables - NEVER COMMIT THESE
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
 # Logs
 logs
 *.log
@@ -12,6 +20,11 @@ dist
 dist-ssr
 *.local
 
+# Test coverage
+coverage
+*.lcov
+.nyc_output
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +35,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Supabase
+.supabase
