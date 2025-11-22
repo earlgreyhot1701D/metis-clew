@@ -1,6 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Terminal color palette */
+    --background: 0 0% 4%; /* #0a0a0a - Deep black */
+    --foreground: 120 100% 50%; /* #00ff00 - Bright green */
+    
+    --card: 0 0% 7%; /* Slightly lighter than background */
+    --card-foreground: 120 100% 50%;
+    
+    --popover: 0 0% 7%;
+    --popover-foreground: 120 100% 50%;
+    
+    --primary: 120 100% 50%; /* Bright green */
+    --primary-foreground: 0 0% 4%; /* Black text on green */
+    
+    --secondary: 180 100% 50%; /* Cyan accent */
+    --secondary-foreground: 0 0% 4%;
+    
+    --muted: 0 0% 20%; /* Dim gray */
+    --muted-foreground: 0 0% 50%;
+    
+    --accent: 45 100% 50%; /* Amber/yellow */
+    --accent-foreground: 0 0% 4%;
+    
+    --destructive: 0 100% 50%; /* Red */
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 120 100% 30%; /* Dim green for borders */
+    --input: 120 100% 30%;
+    --ring: 120 100% 50%;
+    
+    --radius: 0rem; /* Sharp corners for terminal look */
+    
+    /* Terminal-specific */
+    --terminal-glow: 120 100% 50%;
+    --cursor-blink: 1s;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-mono;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  }
+  
+  /* Terminal cursor blink animation */
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  
+  .cursor-blink {
+    animation: blink var(--cursor-blink) infinite;
+  }
+  
+  /* ASCII box drawing */
+  .ascii-box {
+    border: 1px solid hsl(var(--border));
+    position: relative;
+  }
+  
+  .ascii-box::before,
+  .ascii-box::after {
+    content: '';
+    position: absolute;
+    background: hsl(var(--background));
+  }
+  
+  /* Terminal text glow effect */
+  .text-glow {
+    text-shadow: 0 0 5px hsl(var(--terminal-glow) / 0.5),
+                 0 0 10px hsl(var(--terminal-glow) / 0.3);
+  }
+  
+  /* Selection styling */
+  ::selection {
+    background: hsl(var(--secondary) / 0.3);
+    color: hsl(var(--secondary));
+  }
+  
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+    border-left: 1px solid hsl(var(--border));
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
