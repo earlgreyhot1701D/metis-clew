@@ -7,6 +7,8 @@ import { InteractiveCodeView } from "@/components/InteractiveCodeView";
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { LearningPatternsDrawer } from "@/components/LearningPatternsDrawer";
 import { WelcomeModal } from "@/components/WelcomeModal";
+import { Sidebar } from "@/components/Sidebar";
+import { StatusBar } from "@/components/StatusBar";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -144,35 +146,43 @@ const Index = () => {
       <WelcomeModal />
       <Header />
 
-      <main className="flex-1 container mx-auto p-4 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
-          {/* Code Input - Left Column */}
-          <div className="lg:col-span-4 h-[500px] lg:h-full">
-            <CodeInputPanel
-              onSubmit={handleCodeSubmit}
-              isLoading={submitCodeMutation.isPending}
-            />
-          </div>
+      <div className="flex-1 flex overflow-hidden">
+        <Sidebar />
+        
+        <div className="flex-1 flex flex-col">
+          <main className="flex-1 container mx-auto p-4 overflow-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-120px)]">
+              {/* Code Input - Left Column */}
+              <div className="lg:col-span-4 h-[500px] lg:h-full">
+                <CodeInputPanel
+                  onSubmit={handleCodeSubmit}
+                  isLoading={submitCodeMutation.isPending}
+                />
+              </div>
 
-          {/* Interactive View - Center Column */}
-          <div className="lg:col-span-5 h-[500px] lg:h-full">
-            <InteractiveCodeView
-              code={currentSnippet?.code || ""}
-              language={currentSnippet?.language || "python"}
-              onExplainRequest={handleExplainRequest}
-              isLoading={explainCodeMutation.isPending}
-            />
-          </div>
+              {/* Interactive View - Center Column */}
+              <div className="lg:col-span-5 h-[500px] lg:h-full">
+                <InteractiveCodeView
+                  code={currentSnippet?.code || ""}
+                  language={currentSnippet?.language || "python"}
+                  onExplainRequest={handleExplainRequest}
+                  isLoading={explainCodeMutation.isPending}
+                />
+              </div>
 
-          {/* Explanation - Right Column */}
-          <div className="lg:col-span-3 h-[500px] lg:h-full">
-            <ExplanationPanel
-              explanation={currentExplanation}
-              isLoading={explainCodeMutation.isPending}
-            />
-          </div>
+              {/* Explanation - Right Column */}
+              <div className="lg:col-span-3 h-[500px] lg:h-full">
+                <ExplanationPanel
+                  explanation={currentExplanation}
+                  isLoading={explainCodeMutation.isPending}
+                />
+              </div>
+            </div>
+          </main>
+
+          <StatusBar />
         </div>
-      </main>
+      </div>
 
       <LearningPatternsDrawer patterns={patterns} />
     </div>

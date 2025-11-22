@@ -25,10 +25,13 @@ export const CodeInputPanel = ({ onSubmit, isLoading }: CodeInputPanelProps) => 
   return (
     <div className="ascii-box p-4 h-full flex flex-col">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-glow flex items-center gap-2">
-          <Code className="h-5 w-5" />
-          ╔═══ CODE INPUT ═══╗
-        </h2>
+        <div>
+          <h2 className="text-lg font-bold text-glow flex items-center gap-2">
+            <Code className="h-5 w-5" />
+            ╔═══ CODE INPUT ═══╗
+          </h2>
+          <p className="text-xs text-accent mt-1">→ paste or write your code</p>
+        </div>
         <Select value={language} onValueChange={setLanguage}>
           <SelectTrigger className="w-[140px] bg-background border-border">
             <SelectValue />
@@ -53,8 +56,9 @@ export const CodeInputPanel = ({ onSubmit, isLoading }: CodeInputPanelProps) => 
       />
 
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">
-          Lines: {lineCount} | Chars: {charCount}
+        <div className="text-xs">
+          <span className="text-muted-foreground">Lines: {lineCount} | Chars: {charCount}</span>
+          <span className="text-accent ml-4">↓ click any line for explanation</span>
         </div>
         <Button
           onClick={handleSubmit}
