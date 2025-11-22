@@ -1,13 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Terminal, TrendingUp, Award } from "lucide-react";
+import { useLocalSession } from "@/hooks/useLocalSession";
 
 export const StatusBar = () => {
+  const { sessionData } = useLocalSession();
+  
   const { data: sessionStats } = useQuery({
     queryKey: ['session-stats'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user) return {
+        sessionCount: sessionData.sessionCount,
+        totalPatterns: sessionData.totalPatterns,
+        skillLevel: sessionData.skillLevel,
+      };
       
       const { data: sessions } = await supabase
         .from('user_sessions')
