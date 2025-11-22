@@ -5,9 +5,10 @@ import { NavLink } from "./NavLink";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "./ui/badge";
 import { useLocalSession } from "@/hooks/useLocalSession";
+import { SkillBadge } from "./SkillBadge";
 
 export const Sidebar = () => {
-  const { sessionData } = useLocalSession();
+  const { sessionData, getProgress, getNextLevelInfo } = useLocalSession();
   
   const { data: recentSnippets } = useQuery({
     queryKey: ['recent-snippets'],
@@ -100,6 +101,23 @@ export const Sidebar = () => {
             
             <div className="space-y-3 text-xs">
               <div>
+                <span className="text-muted-foreground block mb-2">Skill Level:</span>
+                <SkillBadge 
+                  level={sessionData.skillLevel} 
+                  showProgress={sessionData.skillLevel !== 'advanced'}
+                  progress={getProgress() || 0}
+                />
+                {getNextLevelInfo() && (
+                  <div className="text-muted-foreground mt-2">
+                    {getNextLevelInfo()?.remaining} more to {getNextLevelInfo()?.nextLevel}
+                  </div>
+                )}
+                {sessionData.skillLevel === 'advanced' && (
+                  <div className="text-accent mt-2 font-semibold">🏆 Max Level!</div>
+                )}
+              </div>
+              
+              <div className="pt-2 border-t border-accent/20">
                 <span className="text-muted-foreground">Dominant Pattern:</span>
                 <div className="text-accent font-semibold mt-1">
                   {userPreferences?.dominant_pattern || 'Building profile...'}
@@ -109,7 +127,7 @@ export const Sidebar = () => {
               <div>
                 <span className="text-muted-foreground">Explanations:</span>
                 <div className="text-foreground font-semibold mt-1">
-                  {userPreferences?.total_explanations || 0}
+                  {userPreferences?.total_explanations || sessionData.totalExplanations}
                 </div>
               </div>
 

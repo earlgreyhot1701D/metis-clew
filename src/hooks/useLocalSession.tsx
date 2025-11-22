@@ -18,6 +18,31 @@ interface LocalSessionData {
 
 const STORAGE_KEY = 'metis_clew_session';
 
+// Skill progression thresholds
+const SKILL_THRESHOLDS = {
+  beginner: { min: 0, max: 9 },
+  intermediate: { min: 10, max: 49 },
+  advanced: { min: 50, max: Infinity },
+};
+
+const calculateSkillLevel = (explanations: number): string => {
+  if (explanations >= SKILL_THRESHOLDS.advanced.min) return 'advanced';
+  if (explanations >= SKILL_THRESHOLDS.intermediate.min) return 'intermediate';
+  return 'beginner';
+};
+
+const getProgressToNextLevel = (explanations: number, currentLevel: string): number | null => {
+  if (currentLevel === 'advanced') return null; // Max level
+  
+  const nextLevel = currentLevel === 'beginner' ? 'intermediate' : 'advanced';
+  const nextThreshold = SKILL_THRESHOLDS[nextLevel as keyof typeof SKILL_THRESHOLDS].min;
+  const currentThreshold = SKILL_THRESHOLDS[currentLevel as keyof typeof SKILL_THRESHOLDS].min;
+  const range = nextThreshold - currentThreshold;
+  const progress = explanations - currentThreshold;
+  
+  return Math.min(100, Math.round((progress / range) * 100));
+};
+
 const getDefaultData = (): LocalSessionData => ({
   sessionCount: 0,
   totalPatterns: 0,
@@ -80,12 +105,47 @@ export const useLocalSession = () => {
     });
   };
 
-  const trackExplanation = () => {
-    setSessionData((prev) => ({
-      ...prev,
-      totalExplanations: prev.totalExplanations + 1,
-      totalPatterns: prev.totalPatterns + 1,
-    }));
+  const trackExplanation = (): { leveledUp: boolean; newLevel: string } => {
+    let levelUpInfo = { leveledUp: false, newLevel: sessionData.skillLevel };
+    
+    setSessionData((prev) => {
+      const newExplanations = prev.totalExplanations + 1;
+      const newPatterns = prev.totalPatterns + 1;
+      const newSkillLevel = calculateSkillLevel(newExplanations);
+      
+      levelUpInfo = {
+        leveledUp: prev.skillLevel !== newSkillLevel,
+        newLevel: newSkillLevel,
+      };
+      
+      return {
+        ...prev,
+        totalExplanations: newExplanations,
+        totalPatterns: newPatterns,
+        skillLevel: newSkillLevel,
+      };
+    });
+    
+    return levelUpInfo;
+  };
+  
+  const getProgress = () => {
+    return getProgressToNextLevel(sessionData.totalExplanations, sessionData.skillLevel);
+  };
+  
+  const getNextLevelInfo = () => {
+    const currentLevel = sessionData.skillLevel;
+    if (currentLevel === 'advanced') return null;
+    
+    const nextLevel = currentLevel === 'beginner' ? 'intermediate' : 'advanced';
+    const nextThreshold = SKILL_THRESHOLDS[nextLevel as keyof typeof SKILL_THRESHOLDS].min;
+    const remaining = nextThreshold - sessionData.totalExplanations;
+    
+    return {
+      nextLevel,
+      threshold: nextThreshold,
+      remaining: Math.max(0, remaining),
+    };
   };
 
   const updateSkillLevel = (level: string) => {
@@ -100,5 +160,7 @@ export const useLocalSession = () => {
     trackCodeSubmit,
     trackExplanation,
     updateSkillLevel,
+    getProgress,
+    getNextLevelInfo,
   };
 };
