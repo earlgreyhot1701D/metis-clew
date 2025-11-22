@@ -22,6 +22,13 @@ const Index = () => {
   const { data: patterns = [] } = useQuery({
     queryKey: ["learning-patterns"],
     queryFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      
+      // Return empty array if not authenticated
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from("learning_patterns")
         .select("*")
@@ -50,7 +57,11 @@ const Index = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      
+      // Allow usage without auth - just don't save to DB
+      if (!user) {
+        return { id: undefined, code, language };
+      }
 
       const { data, error } = await supabase
         .from("code_snippets")
@@ -73,7 +84,7 @@ const Index = () => {
       });
       toast({
         title: "Success",
-        description: "Code submitted successfully",
+        description: "Code loaded successfully",
       });
     },
     onError: (error: any) => {
