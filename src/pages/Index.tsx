@@ -6,6 +6,7 @@ import { CodeInputPanel } from "@/components/CodeInputPanel";
 import { InteractiveCodeView } from "@/components/InteractiveCodeView";
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { LearningPatternsDrawer } from "@/components/LearningPatternsDrawer";
+import { WelcomeModal } from "@/components/WelcomeModal";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -140,6 +141,7 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
+      <WelcomeModal />
       <Header />
 
       <main className="flex-1 container mx-auto p-4 overflow-hidden">
