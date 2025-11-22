@@ -44,6 +44,16 @@
     /* Electric blue glow */
     --terminal-glow: 214 100% 77%;
     --cursor-blink: 1s;
+    
+    /* Sidebar colors - matching main theme */
+    --sidebar-background: 222 47% 11%; /* Same as --background */
+    --sidebar-foreground: 214 100% 77%; /* Same as --foreground */
+    --sidebar-primary: 214 100% 77%; /* Electric blue */
+    --sidebar-primary-foreground: 222 47% 11%; /* Dark navy */
+    --sidebar-accent: 43 96% 56%; /* Amber accent */
+    --sidebar-accent-foreground: 222 47% 11%; /* Dark navy */
+    --sidebar-border: 214 100% 50%; /* Electric blue border */
+    --sidebar-ring: 214 100% 77%; /* Electric blue ring */
   }
 }
 
