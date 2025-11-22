@@ -11,6 +11,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { StatusBar } from "@/components/StatusBar";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalSession } from "@/hooks/useLocalSession";
+import { toast as sonnerToast } from "sonner";
+import { SkillBadge } from "@/components/SkillBadge";
 
 const Index = () => {
   const [currentSnippet, setCurrentSnippet] = useState<{
@@ -121,8 +123,28 @@ const Index = () => {
     },
     onSuccess: (data) => {
       setCurrentExplanation(data.explanation);
-      trackExplanation();
+      const levelInfo = trackExplanation();
       queryClient.invalidateQueries({ queryKey: ["learning-patterns"] });
+      
+      // Show level-up celebration
+      if (levelInfo.leveledUp) {
+        sonnerToast.success(
+          <div className="flex items-center gap-3">
+            <span className="text-lg">🎉</span>
+            <div>
+              <div className="font-semibold">Level Up!</div>
+              <div className="text-sm opacity-90">
+                You've advanced to <span className="capitalize font-semibold">{levelInfo.newLevel}</span>
+              </div>
+            </div>
+          </div>,
+          {
+            duration: 5000,
+            position: "top-center",
+          }
+        );
+      }
+      
       toast({
         title: "Explanation generated",
         description: "Your code explanation is ready",

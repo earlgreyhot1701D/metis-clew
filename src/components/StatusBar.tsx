@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Terminal, TrendingUp, Award } from "lucide-react";
 import { useLocalSession } from "@/hooks/useLocalSession";
+import { SkillBadge } from "./SkillBadge";
 
 export const StatusBar = () => {
   const { sessionData } = useLocalSession();
@@ -63,10 +64,10 @@ export const StatusBar = () => {
           <span className="text-foreground font-semibold">{sessionStats?.totalPatterns || 0}</span>
         </div>
         
-        <div className="flex items-center gap-2 px-3 py-1 rounded bg-accent/10 border border-accent/30">
-          <span className="text-muted-foreground">Skill:</span>
-          <span className="text-accent font-semibold uppercase">{sessionStats?.skillLevel || 'beginner'}</span>
-        </div>
+        <SkillBadge 
+          level={sessionStats?.skillLevel || 'beginner'} 
+          compact 
+        />
       </div>
     </div>
   );
