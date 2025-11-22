@@ -1,6 +1,8 @@
-import { MessageSquare, Bookmark } from "lucide-react";
+import { MessageSquare, Bookmark, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface Explanation {
   whatItDoes: string;
@@ -20,6 +22,16 @@ export const ExplanationPanel = ({
   isLoading,
   onSavePattern,
 }: ExplanationPanelProps) => {
+  const handleFeedback = async (isHelpful: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    toast({
+      title: isHelpful ? "Thanks for the feedback!" : "We'll improve this",
+      description: "Your feedback helps Metis Clew learn your preferences",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="ascii-box p-4 h-full flex flex-col">
@@ -48,10 +60,13 @@ export const ExplanationPanel = ({
   return (
     <div className="ascii-box p-4 h-full flex flex-col">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-glow flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          ╔═══ EXPLANATION ═══╗
-        </h2>
+        <div>
+          <h2 className="text-lg font-bold text-glow flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            ╔═══ EXPLANATION ═══╗
+          </h2>
+          <p className="text-xs text-accent mt-1">↳ explanations adapted to YOUR learning style</p>
+        </div>
         {onSavePattern && (
           <Button
             variant="ghost"
@@ -108,6 +123,33 @@ export const ExplanationPanel = ({
           </section>
         </div>
       </ScrollArea>
+
+      {/* Feedback & Personalization Footer */}
+      <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs">
+          <Sparkles className="h-3 w-3 text-accent" />
+          <span className="text-muted-foreground">Was this helpful?</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            onClick={() => handleFeedback(true)}
+          >
+            <ThumbsUp className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            onClick={() => handleFeedback(false)}
+          >
+            <ThumbsDown className="h-3 w-3" />
+          </Button>
+        </div>
+        <div className="text-xs text-accent">
+          ⚡ Personalized for you
+        </div>
+      </div>
     </div>
   );
 };

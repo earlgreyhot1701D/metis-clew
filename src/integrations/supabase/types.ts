@@ -52,6 +52,30 @@ export type Database = {
           },
         ]
       }
+      explanation_feedback: {
+        Row: {
+          created_at: string
+          explanation_id: string
+          id: string
+          is_helpful: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          explanation_id: string
+          id?: string
+          is_helpful: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          explanation_id?: string
+          id?: string
+          is_helpful?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       explanations: {
         Row: {
           created_at: string
@@ -153,6 +177,90 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      recent_snippets: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          language: string
+          last_accessed: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          language?: string
+          last_accessed?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          language?: string
+          last_accessed?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          dominant_pattern: string | null
+          id: string
+          skill_level: string | null
+          total_explanations: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dominant_pattern?: string | null
+          id?: string
+          skill_level?: string | null
+          total_explanations?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dominant_pattern?: string | null
+          id?: string
+          skill_level?: string | null
+          total_explanations?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          patterns_learned: number | null
+          session_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patterns_learned?: number | null
+          session_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patterns_learned?: number | null
+          session_date?: string
+          user_id?: string
         }
         Relationships: []
       }
