@@ -21,6 +21,7 @@ const Index = () => {
     language: string;
   } | null>(null);
   const [currentExplanation, setCurrentExplanation] = useState<any>(null);
+  const [currentExplanationId, setCurrentExplanationId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { trackCodeSubmit, trackExplanation } = useLocalSession();
@@ -123,6 +124,7 @@ const Index = () => {
     },
     onSuccess: (data) => {
       setCurrentExplanation(data.explanation);
+      setCurrentExplanationId(data.explanationId);
       const levelInfo = trackExplanation();
       queryClient.invalidateQueries({ queryKey: ["learning-patterns"] });
       
@@ -212,6 +214,7 @@ const Index = () => {
               <div className="lg:col-span-3 h-[500px] lg:h-full">
                 <ExplanationPanel
                   explanation={currentExplanation}
+                  explanationId={currentExplanationId}
                   isLoading={explainCodeMutation.isPending}
                 />
               </div>

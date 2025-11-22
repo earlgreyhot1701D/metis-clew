@@ -133,18 +133,23 @@ Explain the selected code in context. Return JSON only.`;
     }
 
     // Store explanation in database if snippet_id provided
+    let explanationId: string | undefined;
     if (snippet_id) {
-      const { error: insertError } = await supabaseClient
+      const { data: insertedExplanation, error: insertError } = await supabaseClient
         .from("explanations")
         .insert({
           snippet_id,
           user_id: user.id,
           selected_code,
           explanation,
-        });
+        })
+        .select("id")
+        .single();
 
       if (insertError) {
         console.error("Error storing explanation:", insertError);
+      } else {
+        explanationId = insertedExplanation?.id;
       }
 
       // Update or create learning pattern
@@ -178,7 +183,7 @@ Explain the selected code in context. Return JSON only.`;
       }
     }
 
-    return new Response(JSON.stringify({ explanation }), {
+    return new Response(JSON.stringify({ explanation, explanationId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

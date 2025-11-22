@@ -1,4 +1,6 @@
-import { MessageSquare, Bookmark, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { MessageSquare, Bookmark, ThumbsUp, ThumbsDown, Meh, Sparkles } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,22 +15,96 @@ interface Explanation {
 
 interface ExplanationPanelProps {
   explanation: Explanation | null;
+  explanationId?: string;
   isLoading: boolean;
   onSavePattern?: () => void;
 }
 
+type Rating = -1 | 0 | 1;
+
+interface SaveRatingParams {
+  explanationId: string;
+  userId: string;
+  rating: Rating;
+}
+
 export const ExplanationPanel = ({
   explanation,
+  explanationId,
   isLoading,
   onSavePattern,
 }: ExplanationPanelProps) => {
-  const handleFeedback = async (isHelpful: boolean) => {
+  const [selectedRating, setSelectedRating] = useState<Rating | null>(null);
+
+  // Mutation to save rating to database
+  const saveRatingMutation = useMutation({
+    mutationFn: async ({ explanationId, userId, rating }: SaveRatingParams) => {
+      const { data, error } = await supabase
+        .from("explanation_ratings")
+        .upsert(
+          {
+            explanation_id: explanationId,
+            user_id: userId,
+            rating,
+            created_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "explanation_id,user_id",
+          }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Rating saved!",
+        description: "Your feedback helps Metis Clew learn your preferences",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error saving rating",
+        description: error.message,
+        variant: "destructive",
+      });
+      // Reset selected rating on error
+      setSelectedRating(null);
+    },
+  });
+
+  const handleRating = async (rating: Rating) => {
+    // Check if user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    toast({
-      title: isHelpful ? "Thanks for the feedback!" : "We'll improve this",
-      description: "Your feedback helps Metis Clew learn your preferences",
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to rate explanations",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if we have an explanation ID
+    if (!explanationId) {
+      toast({
+        title: "Cannot save rating",
+        description: "No explanation ID available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update local state immediately for UI feedback
+    setSelectedRating(rating);
+
+    // Save to database
+    saveRatingMutation.mutate({
+      explanationId,
+      userId: user.id,
+      rating,
     });
   };
 
@@ -132,16 +208,42 @@ export const ExplanationPanel = ({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2"
-            onClick={() => handleFeedback(true)}
+            className={`h-7 px-2 ${
+              selectedRating === 1
+                ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                : ""
+            }`}
+            onClick={() => handleRating(1)}
+            disabled={saveRatingMutation.isPending}
+            title="Helpful"
           >
             <ThumbsUp className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2"
-            onClick={() => handleFeedback(false)}
+            className={`h-7 px-2 ${
+              selectedRating === 0
+                ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
+                : ""
+            }`}
+            onClick={() => handleRating(0)}
+            disabled={saveRatingMutation.isPending}
+            title="Neutral"
+          >
+            <Meh className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-7 px-2 ${
+              selectedRating === -1
+                ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                : ""
+            }`}
+            onClick={() => handleRating(-1)}
+            disabled={saveRatingMutation.isPending}
+            title="Not helpful"
           >
             <ThumbsDown className="h-3 w-3" />
           </Button>
