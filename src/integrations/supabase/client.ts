@@ -2,18 +2,22 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// EMERGENCY FALLBACK: Use hardcoded values if env vars not available
-// This is needed because Lovable may not load .env files properly
+// Environment variables with fallback for Lovable platform
+// NOTE: These are PUBLIC keys (safe to expose in client code)
+// They are protected by Supabase Row Level Security (RLS)
+// For production, set these in Lovable Settings > Environment Variables
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ujjjuoqqefgtrpecneeg.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqamp1b3FxZWZndHJwZWNuZWVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MDc1MjksImV4cCI6MjA3OTM4MzUyOX0.7P7VSlbs01-UDOJf5Zo49j0rEWwUMFmjf-V9qWMe2wA';
 
-console.log('🔧 Supabase Client Init:', {
-  url: SUPABASE_URL,
-  hasKey: !!SUPABASE_PUBLISHABLE_KEY,
-  keyLength: SUPABASE_PUBLISHABLE_KEY?.length,
-  envUrl: import.meta.env.VITE_SUPABASE_URL,
-  envKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-});
+// Debug logging (remove in production)
+if (import.meta.env.DEV) {
+  console.log('🔧 Supabase Client Init:', {
+    url: SUPABASE_URL,
+    hasKey: !!SUPABASE_PUBLISHABLE_KEY,
+    usingEnvVars: !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
+    usingFallback: !(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+  });
+}
 
 // Validate environment variables
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
