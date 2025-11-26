@@ -1,5 +1,6 @@
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- Enable extensions
+create extension if not exists "pgcrypto";
+create extension if not exists "uuid-ossp"; -- optional, kept for compatibility
 
 -- Create profiles table
 create table public.profiles (
@@ -27,7 +28,7 @@ create policy "Users can insert their own profile"
 
 -- Create code_snippets table
 create table public.code_snippets (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   title text,
   code text not null,
@@ -58,7 +59,7 @@ create policy "Users can delete their own code snippets"
 
 -- Create explanations table
 create table public.explanations (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   snippet_id uuid references public.code_snippets(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
   selected_code text not null,
@@ -85,7 +86,7 @@ create policy "Users can delete their own explanations"
 
 -- Create learning_patterns table
 create table public.learning_patterns (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   pattern_type text not null,
   frequency integer default 1 not null,
@@ -98,7 +99,6 @@ create table public.learning_patterns (
 -- Enable RLS on learning_patterns
 alter table public.learning_patterns enable row level security;
 
--- RLS policies for learning_patterns
 create policy "Users can view their own learning patterns"
   on public.learning_patterns for select
   using (auth.uid() = user_id);
@@ -111,7 +111,7 @@ create policy "Users can update their own learning patterns"
   on public.learning_patterns for update
   using (auth.uid() = user_id);
 
--- Create trigger function to update updated_at timestamp
+-- Trigger function to update updated_at
 create or replace function public.handle_updated_at()
 returns trigger as $$
 begin
@@ -120,7 +120,7 @@ begin
 end;
 $$ language plpgsql;
 
--- Create triggers for updated_at
+-- Triggers for updated_at
 create trigger handle_profiles_updated_at
   before update on public.profiles
   for each row
@@ -131,7 +131,7 @@ create trigger handle_code_snippets_updated_at
   for each row
   execute function public.handle_updated_at();
 
--- Create trigger function to create profile on user signup
+-- Trigger function to create profile on user signup
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -144,7 +144,7 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public;
 
--- Create trigger for new user profile creation
+-- Trigger for new user profile creation
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
