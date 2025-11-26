@@ -87,6 +87,7 @@
     "jest-environment-jsdom": "^30.2.0",
     "lovable-tagger": "^1.1.11",
     "postcss": "^8.5.6",
+    "supabase": "^2.62.5",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.4.5",
     "typescript": "^5.8.3",
