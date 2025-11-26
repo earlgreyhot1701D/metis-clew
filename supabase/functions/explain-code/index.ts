@@ -1,141 +1,158 @@
+// supabase/functions/explain-code/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ----------------------------
+// CORS HEADERS
+// ----------------------------
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-interface ExplainRequest {
-  code_snippet: string;
-  selected_code: string;
-  language: string;
-  snippet_id?: string;
+// ----------------------------
+// ENVIRONMENT VARIABLES (Supabase CLI v2)
+// ----------------------------
+const SUPA_URL = Deno.env.get("SUPA_URL");
+const SUPA_ANON_KEY = Deno.env.get("SUPA_ANON_KEY");
+const METIS_CLEW = Deno.env.get("METIS_CLEW");
+
+if (!SUPA_URL || !SUPA_ANON_KEY) {
+  console.error("❌ Missing SUPA_URL or SUPA_ANON_KEY");
+  throw new Error("Supabase env vars not set.");
 }
 
-interface ClaudeResponse {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
+if (!METIS_CLEW) {
+  console.error("❌ Missing METIS_CLEW");
+  throw new Error("METIS_CLEW not set (Claude API key).");
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+// ----------------------------
+// AI MODEL CONFIG
+// ----------------------------
+const CLAUDE_MODEL = "claude-3-haiku-20240307"; // stable + cheap
+
+// ----------------------------
+// SUPABASE CLIENT FACTORY
+// ----------------------------
+function getClient(req: Request) {
+  return createClient(SUPA_URL!, SUPA_ANON_KEY!, {
+    global: {
+      headers: {
+        Authorization: req.headers.get("Authorization") ?? "",
+      },
+    },
+  });
+}
+
+// ----------------------------
+// SERVER ENTRYPOINT
+// ----------------------------
+serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Get authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header");
+    // -----------------------------------------------------
+    // 1. Parse request
+    // -----------------------------------------------------
+    const body = await req.json();
+    const { snippet_id, code_snippet, selected_code, language } = body;
+
+    if (!selected_code || !code_snippet || !language) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Missing required fields: selected_code, code_snippet, language",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
+    // -----------------------------------------------------
+    // 2. Authenticate user via RLS
+    // -----------------------------------------------------
+    const supabase = getClient(req);
 
-    // Get user from JWT
     const {
       data: { user },
       error: userError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Parse request body
-    const { code_snippet, selected_code, language, snippet_id }: ExplainRequest =
-      await req.json();
+    // -----------------------------------------------------
+    // 3. Build Claude prompt
+    // -----------------------------------------------------
+    const prompt = `
+Explain the selected code using simple, accurate language.
+Output valid JSON with this structure:
 
-    console.log("Explaining code:", { language, selected_length: selected_code.length });
+{
+  "whatItDoes": "...",
+  "whyItMatters": "...",
+  "keyConcepts": ["...", "..."],
+  "relatedPatterns": ["...", "..."]
+}
 
-    // Get Claude API key
-    const anthropicApiKey = Deno.env.get("Metis_Clew");
-    if (!anthropicApiKey) {
-      throw new Error("Metis_Clew not configured");
-    }
+Full code:
 
-    // Construct prompt for Claude
-    const systemPrompt = `You are Metis Clew, an AI code explanation assistant that helps developers understand code through adaptive learning.
-
-When explaining code:
-1. Be concise and clear (aim for 2-3 sentences per section)
-2. Assume the user has basic programming knowledge but may be learning this specific pattern
-3. Structure your response as JSON with these sections:
-   - whatItDoes: Plain English explanation
-   - whyItMatters: Practical significance and use cases
-   - keyConcepts: Array of 2-4 key concepts/patterns used
-   - relatedPatterns: Array of related programming patterns to explore
-
-Return ONLY valid JSON, no markdown formatting or code blocks.`;
-
-    const userPrompt = `Full code context:
-\`\`\`${language}
 ${code_snippet}
-\`\`\`
 
-The user has selected this portion:
-\`\`\`${language}
+Selected code:
+
 ${selected_code}
-\`\`\`
+`;
 
-Explain the selected code in context. Return JSON only.`;
-
-    // Call Claude API
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    // -----------------------------------------------------
+    // 4. Call Claude Messages API
+    // -----------------------------------------------------
+    const aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicApiKey,
+        "x-api-key": METIS_CLEW!,
         "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1024,
-        messages: [
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
-        system: systemPrompt,
+        model: CLAUDE_MODEL,
+        max_tokens: 800,
+        messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Claude API error:", response.status, errorText);
-      throw new Error(`Claude API error: ${response.status}`);
+    if (!aiResponse.ok) {
+      const errTxt = await aiResponse.text();
+      console.error("Claude error:", errTxt);
+      throw new Error(`Claude API error: ${aiResponse.status}`);
     }
 
-    const claudeResponse: ClaudeResponse = await response.json();
-    const explanationText = claudeResponse.content[0].text;
+    const aiJson = await aiResponse.json();
+    const explanationText = aiJson?.content?.[0]?.text;
 
-    // Parse JSON response
     let explanation;
     try {
       explanation = JSON.parse(explanationText);
-    } catch (e) {
-      console.error("Failed to parse Claude response:", explanationText);
-      throw new Error("Invalid response from AI");
+    } catch {
+      console.error("Invalid Claude JSON:", explanationText);
+      explanation = { error: "Invalid response from AI" };
     }
 
-    // Store explanation in database if snippet_id provided
-    let explanationId: string | undefined;
+    // -----------------------------------------------------
+    // 5. Save explanation into DB (optional but expected)
+    // -----------------------------------------------------
+    let explanationId = null;
+
     if (snippet_id) {
-      const { data: insertedExplanation, error: insertError } = await supabaseClient
+      const { data, error } = await supabase
         .from("explanations")
         .insert({
           snippet_id,
@@ -146,51 +163,23 @@ Explain the selected code in context. Return JSON only.`;
         .select("id")
         .single();
 
-      if (insertError) {
-        console.error("Error storing explanation:", insertError);
-      } else {
-        explanationId = insertedExplanation?.id;
-      }
-
-      // Update or create learning pattern
-      const patternTypes = explanation.keyConcepts || [];
-      for (const patternType of patternTypes) {
-        const { data: existing } = await supabaseClient
-          .from("learning_patterns")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("pattern_type", patternType)
-          .single();
-
-        if (existing) {
-          await supabaseClient
-            .from("learning_patterns")
-            .update({
-              frequency: existing.frequency + 1,
-              last_seen: new Date().toISOString(),
-            })
-            .eq("id", existing.id);
-        } else {
-          await supabaseClient.from("learning_patterns").insert({
-            user_id: user.id,
-            pattern_type: patternType,
-            frequency: 1,
-            insights: {
-              summary: `Learning about ${patternType}`,
-            },
-          });
-        }
+      if (!error) {
+        explanationId = data.id;
       }
     }
 
+    // -----------------------------------------------------
+    // 6. Return result
+    // -----------------------------------------------------
     return new Response(JSON.stringify({ explanation, explanationId }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    console.error("Error in explain-code function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  } catch (err) {
+    console.error("❌ Function crashed:", err);
+
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: err.message ?? "Unknown error" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
