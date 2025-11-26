@@ -26,13 +26,10 @@ if (!SUPA_URL || !SUPA_ANON_KEY) {
 
 if (!METIS_CLEW) {
   console.error("❌ Missing METIS_CLEW");
-  throw new Error("METIS_CLEW not set (Claude API key).");
+  throw new Error("Claude API key is missing.");
 }
 
-// ----------------------------
-// AI MODEL CONFIG
-// ----------------------------
-const CLAUDE_MODEL = "claude-3-haiku-20240307"; // stable + cheap
+const CLAUDE_MODEL = "claude-3-haiku-20240307";
 
 // ----------------------------
 // SUPABASE CLIENT FACTORY
@@ -68,25 +65,27 @@ serve(async (req: Request): Promise<Response> => {
           error:
             "Missing required fields: selected_code, code_snippet, language",
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
     // -----------------------------------------------------
-    // 2. Authenticate user via RLS
+    // 2. Try to authenticate user (optional)
     // -----------------------------------------------------
     const supabase = getClient(req);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let user = null as { id: string } | null;
+    try {
+      const { data, error: userError } = await supabase.auth.getUser();
+      if (!userError && data?.user) {
+        user = data.user;
+      }
+    } catch (e) {
+      console.warn("Auth check failed, treating as guest:", e);
+      user = null;
     }
 
     // -----------------------------------------------------
@@ -138,7 +137,7 @@ ${selected_code}
     const aiJson = await aiResponse.json();
     const explanationText = aiJson?.content?.[0]?.text;
 
-    let explanation;
+    let explanation: any;
     try {
       explanation = JSON.parse(explanationText);
     } catch {
@@ -147,11 +146,12 @@ ${selected_code}
     }
 
     // -----------------------------------------------------
-    // 5. Save explanation into DB (optional but expected)
+    // 5. Save explanation into DB for authenticated users
     // -----------------------------------------------------
-    let explanationId = null;
+    let explanationId: string | null = null;
 
-    if (snippet_id) {
+    // Only persist when we have both a user and a snippet_id.
+    if (user && snippet_id) {
       const { data, error } = await supabase
         .from("explanations")
         .insert({
@@ -163,8 +163,10 @@ ${selected_code}
         .select("id")
         .single();
 
-      if (!error) {
+      if (!error && data) {
         explanationId = data.id;
+      } else if (error) {
+        console.error("Failed to insert explanation:", error);
       }
     }
 
@@ -175,11 +177,11 @@ ${selected_code}
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Function crashed:", err);
 
     return new Response(
-      JSON.stringify({ error: err.message ?? "Unknown error" }),
+      JSON.stringify({ error: err?.message ?? "Unknown error" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

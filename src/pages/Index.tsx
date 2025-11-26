@@ -33,7 +33,7 @@ const Index = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      
+
       // Return empty array if not authenticated
       if (!user) return [];
 
@@ -65,7 +65,7 @@ const Index = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      
+
       // Allow usage without auth - just don't save to DB
       if (!user) {
         return { id: undefined, code, language };
@@ -127,7 +127,7 @@ const Index = () => {
       setCurrentExplanationId(data.explanationId);
       const levelInfo = trackExplanation();
       queryClient.invalidateQueries({ queryKey: ["learning-patterns"] });
-      
+
       // Show level-up celebration
       if (levelInfo.leveledUp) {
         sonnerToast.success(
@@ -146,7 +146,7 @@ const Index = () => {
           }
         );
       }
-      
+
       toast({
         title: "Explanation generated",
         description: "Your code explanation is ready",
@@ -188,12 +188,12 @@ const Index = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar onSnippetClick={handleSnippetClick} />
-        
+
         <div className="flex-1 flex flex-col">
           <main className="flex-1 container mx-auto p-4 overflow-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-120px)]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[calc(100vh-120px)]">
               {/* Code Input - Left Column */}
-              <div className="lg:col-span-4 h-[500px] lg:h-full">
+              <div className="lg:col-span-4 h-full">
                 <CodeInputPanel
                   onSubmit={handleCodeSubmit}
                   isLoading={submitCodeMutation.isPending}
@@ -201,7 +201,7 @@ const Index = () => {
               </div>
 
               {/* Interactive View - Center Column */}
-              <div className="lg:col-span-5 h-[500px] lg:h-full">
+              <div className="lg:col-span-5 h-full">
                 <InteractiveCodeView
                   code={currentSnippet?.code || ""}
                   language={currentSnippet?.language || "python"}
@@ -211,7 +211,7 @@ const Index = () => {
               </div>
 
               {/* Explanation - Right Column */}
-              <div className="lg:col-span-3 h-[500px] lg:h-full">
+              <div className="lg:col-span-3 h-full">
                 <ExplanationPanel
                   explanation={currentExplanation}
                   explanationId={currentExplanationId}
