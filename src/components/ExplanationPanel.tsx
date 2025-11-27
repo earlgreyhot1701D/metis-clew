@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { MessageSquare, Bookmark, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
+import {
+  MessageSquare,
+  Bookmark,
+  ThumbsUp,
+  ThumbsDown,
+  Sparkles,
+} from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,9 +42,12 @@ export const ExplanationPanel = ({
 }: ExplanationPanelProps) => {
   const [selectedRating, setSelectedRating] = useState<boolean | null>(null);
 
-  // Mutation to save rating to database
   const saveRatingMutation = useMutation({
-    mutationFn: async ({ explanationId, userId, is_helpful }: SaveRatingParams) => {
+    mutationFn: async ({
+      explanationId,
+      userId,
+      is_helpful,
+    }: SaveRatingParams) => {
       const { data, error } = await supabase
         .from("explanation_feedback")
         .insert({
@@ -64,14 +73,15 @@ export const ExplanationPanel = ({
         description: error.message,
         variant: "destructive",
       });
-      // Reset selected rating on error
       setSelectedRating(null);
     },
   });
 
   const handleRating = async (rating: Rating) => {
-    // Check if user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -81,7 +91,6 @@ export const ExplanationPanel = ({
       return;
     }
 
-    // Check if we have an explanation ID
     if (!explanationId) {
       toast({
         title: "Cannot save rating",
@@ -91,10 +100,8 @@ export const ExplanationPanel = ({
       return;
     }
 
-    // Update local state immediately for UI feedback
     setSelectedRating(rating);
 
-    // Save to database
     saveRatingMutation.mutate({
       explanationId,
       userId: user.id,
@@ -112,7 +119,7 @@ export const ExplanationPanel = ({
           </h2>
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-glow animate-pulse">[ ANALYZING... ]</div>
+          <div className="text-glow animate-pulse">[ ANALYZING. ]</div>
         </div>
       </div>
     );
@@ -122,7 +129,9 @@ export const ExplanationPanel = ({
     return (
       <div className="ascii-box p-4 h-full flex flex-col items-center justify-center text-muted-foreground">
         <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
-        <p className="text-center">// Select code in the interactive view to get explanation</p>
+        <p className="text-center">
+          // Select code in the interactive view to get explanation
+        </p>
       </div>
     );
   }
@@ -135,7 +144,9 @@ export const ExplanationPanel = ({
             <MessageSquare className="h-5 w-5" />
             ╔═══ EXPLANATION ═══╗
           </h2>
-          <p className="text-xs text-accent mt-1">↳ explanations adapted to YOUR learning style</p>
+          <p className="text-xs text-accent mt-1">
+            ↳ explanations adapted to YOUR learning style
+          </p>
         </div>
         {onSavePattern && (
           <Button
@@ -163,7 +174,9 @@ export const ExplanationPanel = ({
             <h3 className="text-sm font-bold text-secondary mb-2">
               // Why it matters
             </h3>
-            <p className="text-sm text-foreground">{explanation.whyItMatters}</p>
+            <p className="text-sm text-foreground">
+              {explanation.whyItMatters}
+            </p>
           </section>
 
           <section>
@@ -228,9 +241,7 @@ export const ExplanationPanel = ({
             <ThumbsDown className="h-3 w-3" />
           </Button>
         </div>
-        <div className="text-xs text-accent">
-          ⚡ Personalized for you
-        </div>
+        <div className="text-xs text-accent">⚡ Personalized for you</div>
       </div>
     </div>
   );

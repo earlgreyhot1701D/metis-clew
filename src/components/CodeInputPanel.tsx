@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Code } from "lucide-react";
 
 interface CodeInputPanelProps {
@@ -9,7 +15,10 @@ interface CodeInputPanelProps {
   isLoading: boolean;
 }
 
-export const CodeInputPanel = ({ onSubmit, isLoading }: CodeInputPanelProps) => {
+export const CodeInputPanel = ({
+  onSubmit,
+  isLoading,
+}: CodeInputPanelProps) => {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("python");
 
@@ -30,7 +39,9 @@ export const CodeInputPanel = ({ onSubmit, isLoading }: CodeInputPanelProps) => 
             <Code className="h-5 w-5" />
             ╔═══ CODE INPUT ═══╗
           </h2>
-          <p className="text-xs text-accent mt-1">→ paste or write your code</p>
+          <p className="text-xs text-accent mt-1">
+            → paste or write your code
+          </p>
         </div>
         <Select value={language} onValueChange={setLanguage}>
           <SelectTrigger className="w-[140px] bg-background border-border">
@@ -57,8 +68,12 @@ export const CodeInputPanel = ({ onSubmit, isLoading }: CodeInputPanelProps) => 
 
       <div className="mt-4 flex items-center justify-between">
         <div className="text-xs">
-          <span className="text-muted-foreground">Lines: {lineCount} | Chars: {charCount}</span>
-          <span className="text-accent ml-4">↓ click any line for explanation</span>
+          <span className="text-muted-foreground">
+            Lines: {lineCount} | Chars: {charCount}
+          </span>
+          <span className="text-accent ml-4">
+            ↓ click any line for explanation
+          </span>
         </div>
         <Button
           onClick={handleSubmit}

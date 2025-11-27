@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { CodeInputPanel } from "@/components/CodeInputPanel";
@@ -20,11 +24,51 @@ const Index = () => {
     code: string;
     language: string;
   } | null>(null);
+
   const [currentExplanation, setCurrentExplanation] = useState<any>(null);
-  const [currentExplanationId, setCurrentExplanationId] = useState<string | undefined>(undefined);
+  const [currentExplanationId, setCurrentExplanationId] = useState<
+    string | undefined
+  >(undefined);
+
+  // Used to force-reset CodeInputPanel
+  const [inputResetKey, setInputResetKey] = useState(0);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { trackCodeSubmit, trackExplanation } = useLocalSession();
+
+  // Load persisted session on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("metis-session");
+      if (saved) {
+        const { snippet, explanation, explanationId } = JSON.parse(saved);
+        if (snippet) setCurrentSnippet(snippet);
+        if (explanation) setCurrentExplanation(explanation);
+        if (explanationId) setCurrentExplanationId(explanationId);
+      }
+    } catch {
+      // Ignore corrupted storage
+    }
+  }, []);
+
+  // Debounced persistence
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      try {
+        const payload = JSON.stringify({
+          snippet: currentSnippet,
+          explanation: currentExplanation,
+          explanationId: currentExplanationId,
+        });
+        localStorage.setItem("metis-session", payload);
+      } catch {
+        // Ignore storage errors
+      }
+    }, 150);
+
+    return () => clearTimeout(handle);
+  }, [currentSnippet, currentExplanation, currentExplanationId]);
 
   // Fetch learning patterns
   const { data: patterns = [] } = useQuery({
@@ -34,7 +78,6 @@ const Index = () => {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Return empty array if not authenticated
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -66,7 +109,7 @@ const Index = () => {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Allow usage without auth - just don't save to DB
+      // Guest mode: skip DB
       if (!user) {
         return { id: undefined, code, language };
       }
@@ -91,6 +134,7 @@ const Index = () => {
         language: data.language,
       });
       trackCodeSubmit(data.code, data.language);
+
       toast({
         title: "Success",
         description: "Code loaded successfully",
@@ -125,10 +169,10 @@ const Index = () => {
     onSuccess: (data) => {
       setCurrentExplanation(data.explanation);
       setCurrentExplanationId(data.explanationId);
+
       const levelInfo = trackExplanation();
       queryClient.invalidateQueries({ queryKey: ["learning-patterns"] });
 
-      // Show level-up celebration
       if (levelInfo.leveledUp) {
         sonnerToast.success(
           <div className="flex items-center gap-3">
@@ -136,7 +180,10 @@ const Index = () => {
             <div>
               <div className="font-semibold">Level Up!</div>
               <div className="text-sm opacity-90">
-                You've advanced to <span className="capitalize font-semibold">{levelInfo.newLevel}</span>
+                You've advanced to{" "}
+                <span className="capitalize font-semibold">
+                  {levelInfo.newLevel}
+                </span>
               </div>
             </div>
           </div>,
@@ -169,16 +216,46 @@ const Index = () => {
     explainCodeMutation.mutate(selectedCode);
   };
 
-  const handleSnippetClick = (snippet: { id?: string; code: string; language: string; title: string }) => {
+  const handleSnippetClick = (snippet: {
+    id?: string;
+    code: string;
+    language: string;
+    title: string;
+  }) => {
     setCurrentSnippet({
       id: snippet.id,
       code: snippet.code,
       language: snippet.language,
     });
+
     toast({
       title: "Snippet loaded",
       description: `"${snippet.title}" is ready for analysis`,
     });
+  };
+
+  // CLEAR CODE (Option 1)
+  const handleClear = () => {
+    setCurrentSnippet(null);
+    setCurrentExplanation(null);
+    setCurrentExplanationId(undefined);
+
+    // Reset the input panel cleanly
+    setInputResetKey((prev) => prev + 1);
+
+    // Update localStorage to an empty session (NOT wiping history/prefs)
+    try {
+      localStorage.setItem(
+        "metis-session",
+        JSON.stringify({
+          snippet: null,
+          explanation: null,
+          explanationId: null,
+        })
+      );
+    } catch {
+      // ignore
+    }
   };
 
   return (
@@ -191,16 +268,27 @@ const Index = () => {
 
         <div className="flex-1 flex flex-col">
           <main className="flex-1 container mx-auto p-4 overflow-auto">
+            {/* Top right controls */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handleClear}
+                className="px-3 py-2 text-sm rounded bg-muted hover:bg-muted/70"
+              >
+                CLEAR CODE
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[calc(100vh-120px)]">
-              {/* Code Input - Left Column */}
+              {/* Code Input - Left */}
               <div className="lg:col-span-4 h-full">
                 <CodeInputPanel
+                  key={inputResetKey}
                   onSubmit={handleCodeSubmit}
                   isLoading={submitCodeMutation.isPending}
                 />
               </div>
 
-              {/* Interactive View - Center Column */}
+              {/* Interactive View - Center */}
               <div className="lg:col-span-5 h-full">
                 <InteractiveCodeView
                   code={currentSnippet?.code || ""}
@@ -210,7 +298,7 @@ const Index = () => {
                 />
               </div>
 
-              {/* Explanation - Right Column */}
+              {/* Explanation - Right */}
               <div className="lg:col-span-3 h-full">
                 <ExplanationPanel
                   explanation={currentExplanation}

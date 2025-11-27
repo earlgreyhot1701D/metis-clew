@@ -29,22 +29,32 @@ export const InteractiveCodeView = ({
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
-    const text = selection?.toString().trim();
+    const text = selection?.toString().trim() || "";
     if (text) {
       setSelectedText(text);
     }
   };
 
   const handleExplain = () => {
-    if (selectedText) {
-      onExplainRequest(selectedText);
+    // Prefer the freshest selection from the DOM, fall back to state.
+    const selection = window.getSelection()?.toString().trim();
+    const textToExplain = selection || selectedText;
+
+    if (textToExplain) {
+      onExplainRequest(textToExplain);
       window.getSelection()?.removeAllRanges();
       setSelectedText("");
     }
   };
 
   const highlightedCode = code
-    ? Prism.highlight(code, Prism.languages[language] || Prism.languages.javascript, language)
+    ? Prism.highlight(
+        code,
+        // Fallback to JS highlighting if language is unknown
+        // @ts-expect-error Prism types are loose here
+        Prism.languages[language] || Prism.languages.javascript,
+        language
+      )
     : "";
 
   if (!code) {
