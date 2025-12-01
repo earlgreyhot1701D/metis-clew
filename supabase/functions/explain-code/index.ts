@@ -30,6 +30,7 @@ if (!METIS_CLEW) {
 }
 
 const CLAUDE_MODEL = "claude-3-haiku-20240307";
+const CLAUDE_TIMEOUT_MS = 25000; // 25s timeout (5s buffer before 30s server limit)
 
 // ----------------------------
 // SUPABASE CLIENT FACTORY
@@ -112,21 +113,37 @@ ${selected_code}
 `;
 
     // -----------------------------------------------------
-    // 4. Call Claude Messages API
+    // 4. Call Claude Messages API (with timeout)
     // -----------------------------------------------------
-    const aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": METIS_CLEW!,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 800,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CLAUDE_TIMEOUT_MS);
+
+    let aiResponse: Response;
+    try {
+      aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": METIS_CLEW!,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 800,
+          messages: [{ role: "user", content: prompt }],
+        }),
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        throw new Error(
+          "Claude API request timed out (>25s). Please try again with shorter code."
+        );
+      }
+      throw err;
+    }
+    clearTimeout(timeoutId);
 
     if (!aiResponse.ok) {
       const errTxt = await aiResponse.text();
