@@ -50,11 +50,14 @@ export const ExplanationPanel = ({
     }: SaveRatingParams) => {
       const { data, error } = await supabase
         .from("explanation_feedback")
-        .insert({
-          explanation_id: explanationId,
-          user_id: userId,
-          is_helpful,
-        })
+        .upsert(
+          {
+            explanation_id: explanationId,
+            user_id: userId,
+            is_helpful,
+          },
+          { onConflict: "explanation_id,user_id" }
+        )
         .select()
         .single();
 
@@ -115,7 +118,7 @@ export const ExplanationPanel = ({
         <div className="mb-4">
           <h2 className="text-lg font-bold text-glow flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            ╔═══ EXPLANATION ═══╗
+            ╔════ EXPLANATION ════╗
           </h2>
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -142,7 +145,7 @@ export const ExplanationPanel = ({
         <div>
           <h2 className="text-lg font-bold text-glow flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            ╔═══ EXPLANATION ═══╗
+            ╔════ EXPLANATION ════╗
           </h2>
           <p className="text-xs text-accent mt-1">
             ↳ explanations adapted to YOUR learning style
@@ -186,7 +189,7 @@ export const ExplanationPanel = ({
             <ul className="space-y-1">
               {explanation.keyConcepts.map((concept, idx) => (
                 <li key={idx} className="text-sm text-foreground">
-                  → {concept}
+                  ↓ {concept}
                 </li>
               ))}
             </ul>
