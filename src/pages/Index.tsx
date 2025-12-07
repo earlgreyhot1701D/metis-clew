@@ -154,12 +154,42 @@ const Index = () => {
     mutationFn: async (selectedCode: string) => {
       if (!currentSnippet) throw new Error("No code snippet");
 
+      // Check if user is authenticated and snippet needs to be saved
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      let snippetId = currentSnippet.id;
+
+      // If user is authenticated but snippet doesn't have an ID, save it first
+      if (user && !snippetId) {
+        const { data: savedSnippet, error: saveError } = await supabase
+          .from("code_snippets")
+          .insert({
+            user_id: user.id,
+            code: currentSnippet.code,
+            language: currentSnippet.language,
+          })
+          .select()
+          .single();
+
+        if (saveError) throw saveError;
+        snippetId = savedSnippet.id;
+
+        // Update currentSnippet with the new ID
+        setCurrentSnippet({
+          id: snippetId,
+          code: currentSnippet.code,
+          language: currentSnippet.language,
+        });
+      }
+
       const { data, error } = await supabase.functions.invoke("explain-code", {
         body: {
           code_snippet: currentSnippet.code,
           selected_code: selectedCode,
           language: currentSnippet.language,
-          snippet_id: currentSnippet.id,
+          snippet_id: snippetId,
         },
       });
 
